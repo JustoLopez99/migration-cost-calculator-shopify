@@ -1,0 +1,660 @@
+<style>
+/* Variables */
+.migration-calculator {
+  --calc-price-color: {{ section.settings.price_color }};
+  --calc-thumb-color: {{ section.settings.thumb_color }};
+  --calc-slider-bg: {{ section.settings.slider_bg }};
+  --calc-slider-fill: {{ section.settings.slider_fill }};
+  --calc-btn-bg: {{ section.settings.button_bg }};
+  --calc-btn-text: {{ section.settings.button_text_color }};
+}
+
+/* Estilos principales */
+.migration-calculator {
+  padding: 60px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+}
+
+/* Contenedor principal */
+.calculator-container {
+  background: rgb(var(--color-background));
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid rgb(var(--color-border));
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* Sliders */
+.slider-group { margin-bottom: 25px; }
+
+/* Etiquetas de los sliders */
+.slider-group label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+/* Estilos para input range */
+.migration-calculator input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 10px;
+  background: var(--calc-slider-bg);
+  cursor: pointer;
+}
+
+/* Thumb para WebKit (Chrome, Safari, Edge) */
+.migration-calculator input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--calc-thumb-color);
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+
+/* Thumb para Firefox */
+.migration-calculator input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--calc-thumb-color);
+  border: none;
+}
+
+/* Track para Firefox */
+.migration-calculator input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 10px;
+  background: var(--calc-slider-bg);
+}
+
+/* Display de precio estimado */
+.price-display {
+  text-align: center;
+  margin: 30px 0;
+  padding: 20px;
+  background: rgba(var(--color-accent), 0.12);
+  border-radius: 8px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.price-display h3 {
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+/* Precio total */
+.total-amount {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--calc-price-color);
+}
+
+/* Mensaje para proyectos personalizados */
+.custom-quote-msg {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--calc-price-color);
+}
+
+/* Contenedor del formulario de contacto */
+.contact-form-wrapper {
+  margin-top: 30px;
+  border-top: 1px solid rgb(var(--color-border));
+  padding-top: 20px;
+}
+
+/* Campos del formulario */
+.contact-form-wrapper input,
+.contact-form-wrapper select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--color-border));
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+}
+
+/* Placeholder de campos */
+.contact-form-wrapper input::placeholder {
+  color: rgba(var(--color-foreground), 0.6);
+}
+
+/* Botón de envío */
+.btn-submit {
+  width: 100%;
+  background: var(--calc-btn-bg);
+  color: var(--calc-btn-text);
+  padding: 15px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity .2s ease;
+}
+
+.btn-submit:hover { opacity: 0.9; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Mensajes de error */
+.error-message {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+/* Mensaje de éxito */
+.success-message {
+  text-align: center;
+  padding: 15px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  display: none; /* Oculto por defecto */
+}
+
+/* Mensaje de error del formulario */
+.form-error-message {
+  text-align: center;
+  padding: 15px;
+  background: rgba(220, 38, 38, 0.1);
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 600;
+  display: none; /* Oculto por defecto */
+}
+</style>
+
+<!-- Sección principal del calculador -->
+<section class="migration-calculator color-{{ section.settings.color_scheme }}">
+  <div class="calculator-container">
+    <!-- Título y subtítulo configurables -->
+    {% if section.settings.heading != blank %}
+      <h2 style="text-align:center">{{ section.settings.heading }}</h2>
+    {% endif %}
+    {% if section.settings.subheading != blank %}
+      <p style="text-align:center">{{ section.settings.subheading }}</p>
+    {% endif %}
+
+    <!-- Contenedor de sliders -->
+    <div class="migration-calculator__sliders">
+      <!-- Slider para clientes -->
+      <div class="slider-group">
+        <label>
+          {{ section.settings.customers_label }}
+          <span><strong data-slider-value="customers">{{ section.settings.customers_default }}</strong></span>
+        </label>
+        <input type="range" 
+               min="{{ section.settings.customers_min | default: 0 }}" 
+               max="{{ section.settings.customers_max | default: 30000 }}" 
+               step="1" 
+               value="{{ section.settings.customers_default }}" 
+               data-slider="customers">
+      </div>
+      
+      <!-- Slider para pedidos -->
+      <div class="slider-group">
+        <label>
+          {{ section.settings.orders_label }}
+          <span><strong data-slider-value="orders">{{ section.settings.orders_default }}</strong></span>
+        </label>
+        <input type="range" 
+               min="{{ section.settings.orders_min | default: 0 }}" 
+               max="{{ section.settings.orders_max | default: 30000 }}" 
+               step="1" 
+               value="{{ section.settings.orders_default }}" 
+               data-slider="orders">
+      </div>
+      
+      <!-- Slider para productos -->
+      <div class="slider-group">
+        <label>
+          {{ section.settings.products_label }}
+          <span><strong data-slider-value="products">{{ section.settings.products_default }}</strong></span>
+        </label>
+        <input type="range" 
+               min="{{ section.settings.products_min | default: 0 }}" 
+               max="{{ section.settings.products_max | default: 30000 }}" 
+               step="1" 
+               value="{{ section.settings.products_default }}" 
+               data-slider="products">
+      </div>
+    </div>
+
+    <!-- Display de precio estimado -->
+    <div class="price-display">
+      <h3>{{ section.settings.price_box_title }}</h3>
+      <div id="price-target"><span class="total-amount">—</span></div>
+    </div>
+
+    <!-- Contenedor para mensajes dinámicos -->
+    <div id="form-messages">
+      <div id="success-message" class="success-message"></div>
+      <div id="form-error-message" class="form-error-message"></div>
+    </div>
+
+    <!-- Formulario de contacto -->
+    <div class="contact-form-wrapper">
+      {% form 'contact', class: 'migration-form', id: 'migration-calculator-form' %}
+        <!-- Errores del formulario nativo de Shopify (solo se muestran si hay recarga de página) -->
+        {% if form.errors %}
+          <div class="error-message" style="display:block">
+            {{ form.errors | default_errors }}
+          </div>
+        {% endif %}
+        
+        <!-- Mensaje de éxito nativo de Shopify (solo se muestra si hay recarga de página) -->
+        {% if form.posted_successfully? %}
+          <div id="success-message" class="success-message">
+            {% if request.design_mode %}
+              <!-- En Theme Editor, mostrar placeholder -->
+              {% if section.settings.success_price_text contains 'price' %}
+                {{ section.settings.success_price_text | replace: 'price', '€1,250' }}
+              {% else %}
+                {{ section.settings.success_custom_text }}
+              {% endif %}
+            {% else %}
+              <span id="success-message-content"></span>
+            {% endif %}
+          </div>
+        {% endif %}
+        
+        <!-- Campos ocultos -->
+        <input type="hidden" id="hidden-total" name="contact[Estimated Price]">
+        <input type="hidden" id="hidden-customers" name="contact[Customers]">
+        <input type="hidden" id="hidden-orders" name="contact[Orders]">
+        <input type="hidden" id="hidden-products" name="contact[Products]">
+
+        <!-- Campo de email -->
+        <input type="email" id="contact-email" name="contact[email]" placeholder="{{ section.settings.email_placeholder }}" required>
+        <div id="email-error" class="error-message">Please enter a valid email address</div>
+        
+        <!-- Campo de teléfono -->
+        <input type="tel" id="contact-phone" name="contact[Phone]" placeholder="{{ section.settings.phone_placeholder }}" required>
+        <div id="phone-error" class="error-message">Please enter a valid phone number</div>
+        
+        <!-- Campo de website actual -->
+        <input type="url" id="contact-website" name="contact[Current Website]" placeholder="{{ section.settings.website_placeholder }}" required>
+        <div id="website-error" class="error-message">Please enter your current website URL</div>
+
+        <!-- Selector de CMS actual -->
+        <select id="contact-cms" name="contact[Current CMS]" required>
+          <option value="" disabled selected>{{ section.settings.cms_placeholder }}</option>
+          <option value="Magento">Magento</option>
+          <option value="WooCommerce">WooCommerce</option>
+          <option value="Wix">Wix</option>
+          <option value="OpenCart">OpenCart</option>
+          <option value="PrestaShop">PrestaShop</option>
+          <option value="Shopify">Shopify</option>
+          <option value="BigCommerce">BigCommerce</option>
+          <option value="Squarespace">Squarespace</option>
+          <option value="Webflow">Webflow</option>
+          <option value="Custom / Headless">Custom / Headless</option>
+          <option value="Other">Other</option>
+        </select>
+        <div id="cms-error" class="error-message">Please select your current CMS</div>
+
+        <!-- Botón de envío -->
+        <button type="button" class="btn-submit" id="submit-button">{{ section.settings.button_text }}</button>
+      {% endform %}
+    </div>
+  </div>
+</section>
+
+<!-- Script para pasar información del mercado al JavaScript -->
+<script>
+  window.MARKET = {
+    country: "{{ localization.country.iso_code | default: 'ES' }}",
+    currency: "{{ localization.country.currency.iso_code | default: 'EUR' }}",
+    symbol: "{{ localization.country.currency.symbol | default: '€' }}"
+  };
+  window.CALCULATOR_TEXT = {
+    successPrice: "{{ section.settings.success_price_text }}",
+    successCustom: "{{ section.settings.success_custom_text }}",
+    custom: "{{ section.settings.custom_project_text }}"
+  };
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Multiplicadores por país para ajustar precios
+  const COUNTRY_MULTIPLIERS = { US:1.2, GB:1.1, CA:1.15 };
+  
+  // Textos configurables desde Liquid
+  const TEXTS = window.CALCULATOR_TEXT;
+  
+  // Referencias DOM
+  const dom = {
+    sliders: document.querySelectorAll('[data-slider]'),
+    values: {
+      customers: document.querySelector('[data-slider-value="customers"]'),
+      orders: document.querySelector('[data-slider-value="orders"]'),
+      products: document.querySelector('[data-slider-value="products"]')
+    },
+    price: document.querySelector('#price-target'),
+    form: document.querySelector('#migration-calculator-form'),
+    hidden: {
+      total: document.querySelector('#hidden-total'),
+      customers: document.querySelector('#hidden-customers'),
+      orders: document.querySelector('#hidden-orders'),
+      products: document.querySelector('#hidden-products')
+    },
+    inputs: {
+      email: document.querySelector('#contact-email'),
+      phone: document.querySelector('#contact-phone'),
+      website: document.querySelector('#contact-website'),
+      cms: document.querySelector('#contact-cms')
+    },
+    errors: {
+      email: document.querySelector('#email-error'),
+      phone: document.querySelector('#phone-error'),
+      website: document.querySelector('#website-error'),
+      cms: document.querySelector('#cms-error')
+    },
+    submitBtn: document.querySelector('#submit-button'),
+    successMessage: document.querySelector('#success-message'),
+    errorMessage: document.querySelector('#form-error-message'),
+    formMessages: document.querySelector('#form-messages')
+  };
+
+  // Tiers de precios
+  const BLOCK_TIERS = [
+    {% for block in section.blocks %}
+      { limit: {{ block.settings.limit | default: 100 }}, price: {{ block.settings.price | default: 499 }} }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  ];
+
+  const DEFAULT_TIERS = [
+    { limit: 100, price: 499 },
+    { limit: 500, price: 799 },
+    { limit: 1000, price: 999 },
+    { limit: 2000, price: 1250 },
+    { limit: 5000, price: 1999 },
+    { limit: 10000, price: 2499 },
+    { limit: 20000, price: 3999 }
+  ];
+
+  const tiers = (BLOCK_TIERS.length ? BLOCK_TIERS : DEFAULT_TIERS).sort((a,b) => a.limit - b.limit);
+  let lastType = 'price', lastLabel = '';
+
+  // Función para pintar el slider
+  function paintSlider(slider) {
+    const min = slider.min || 0, max = slider.max || 100, val = slider.value;
+    const percent = ((val - min) * 100) / (max - min);
+    slider.style.background = `linear-gradient(to right, var(--calc-slider-fill) 0%, var(--calc-slider-fill) ${percent}%, var(--calc-slider-bg) ${percent}%, var(--calc-slider-bg) 100%)`;
+  }
+
+  // Inicializar y configurar eventos para cada slider
+  dom.sliders.forEach(slider => {
+    paintSlider(slider);
+    slider.addEventListener('input', () => paintSlider(slider));
+  });
+
+  // Funciones auxiliares
+  const getMultiplier = () => COUNTRY_MULTIPLIERS[window.MARKET.country] || 1;
+  const formatNumber = num => num.toLocaleString('es-ES');
+  const getValues = () => ({
+    customers: +document.querySelector('[data-slider="customers"]').value,
+    orders: +document.querySelector('[data-slider="orders"]').value,
+    products: +document.querySelector('[data-slider="products"]').value
+  });
+
+  // Ocultar mensajes
+  function hideMessages() {
+    dom.successMessage.style.display = 'none';
+    dom.errorMessage.style.display = 'none';
+  }
+
+  // Mostrar mensaje de éxito
+  function showSuccess(message) {
+    hideMessages();
+    dom.successMessage.textContent = message;
+    dom.successMessage.style.display = 'block';
+    
+    // Hacer scroll al mensaje
+    dom.successMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Mostrar mensaje de error
+  function showError(message) {
+    hideMessages();
+    dom.errorMessage.textContent = message;
+    dom.errorMessage.style.display = 'block';
+    
+    // Hacer scroll al mensaje
+    dom.errorMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Validación del formulario
+  function validateForm() {
+    let isValid = true;
+    Object.values(dom.errors).forEach(error => error.style.display = 'none');
+    
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(dom.inputs.email.value)) { 
+      dom.errors.email.style.display = 'block'; 
+      isValid = false; 
+    }
+    
+    // Validar teléfono (al menos 5 dígitos)
+    const phoneDigits = dom.inputs.phone.value.replace(/\D/g, '');
+    if (phoneDigits.length < 5) { 
+      dom.errors.phone.style.display = 'block'; 
+      isValid = false; 
+    }
+    
+    // Validar URL del website
+    const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    if (!dom.inputs.website.value || !urlRegex.test(dom.inputs.website.value)) { 
+      dom.errors.website.style.display = 'block'; 
+      isValid = false; 
+    }
+    
+    // Validar selección de CMS
+    if (!dom.inputs.cms.value) { 
+      dom.errors.cms.style.display = 'block'; 
+      isValid = false; 
+    }
+    
+    return isValid;
+  }
+
+  // Función principal de cálculo
+  function calculate() {
+    // Obtener valores actuales de los sliders
+    const values = getValues();
+    Object.keys(values).forEach(k => dom.values[k].textContent = formatNumber(values[k]));
+    
+    // Encontrar el valor máximo entre clientes, pedidos y productos
+    const max = Math.max(...Object.values(values));
+    const lastTier = tiers[tiers.length - 1];
+    
+    // Determinar si es un proyecto personalizado o tiene precio fijo
+    if (max > lastTier.limit) {
+      // Proyecto personalizado
+      dom.price.innerHTML = `<span class="custom-quote-msg">${TEXTS.custom}</span>`;
+      dom.hidden.total.value = 'Custom Quote Requested';
+      lastType = 'custom';
+      lastLabel = TEXTS.custom;
+    } else {
+      // Proyecto con precio fijo según tier
+      const tier = tiers.find(t => max <= t.limit);
+      const price = Math.round(tier.price * getMultiplier());
+      lastLabel = `${window.MARKET.symbol}${formatNumber(price)}`;
+      dom.price.innerHTML = `<span class="total-amount">${lastLabel}</span>`;
+      dom.hidden.total.value = `${lastLabel} (${window.MARKET.currency})`;
+      lastType = 'price';
+    }
+    
+    // Actualizar campos ocultos del formulario
+    dom.hidden.customers.value = values.customers;
+    dom.hidden.orders.value = values.orders;
+    dom.hidden.products.value = values.products;
+    
+    return { type: lastType, label: lastLabel };
+  }
+
+  // Enviar formulario sin recargar la página
+  async function submitForm() {
+    // Validar el formulario antes de enviar
+    if (!validateForm()) {
+      showError('Please correct the errors in the form.');
+      return false;
+    }
+    
+    // Asegurar que los campos hidden están actualizados
+    const result = calculate();
+    
+    // Mostrar estado de carga en el botón
+    const originalText = dom.submitBtn.textContent;
+    dom.submitBtn.textContent = 'Sending...';
+    dom.submitBtn.disabled = true;
+    
+    try {
+      // Crear FormData a partir del formulario
+      const formData = new FormData(dom.form);
+      
+      // Enviar formulario usando fetch
+      const response = await fetch('/contact', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        // Formulario enviado exitosamente
+        const successMessage = result.type === 'custom' 
+          ? TEXTS.successCustom 
+          : TEXTS.successPrice.replace('price', result.label);
+        
+        showSuccess(successMessage);
+        
+        // Limpiar el formulario (opcional)
+        dom.form.reset();
+        
+        // Recalcular para restaurar valores por defecto
+        setTimeout(calculate, 100);
+        
+      } else {
+        // Error del servidor
+        showError('There was an error sending your request. Please try again.');
+      }
+      
+    } catch (error) {
+      // Error de red
+      showError('Network error. Please check your connection and try again.');
+      console.error('Form submission error:', error);
+      
+    } finally {
+      // Restaurar botón
+      dom.submitBtn.textContent = originalText;
+      dom.submitBtn.disabled = false;
+    }
+  }
+
+  // Configurar eventos
+  dom.sliders.forEach(slider => slider.addEventListener('input', calculate));
+  
+  // Manejar envío del formulario
+  dom.submitBtn.addEventListener('click', submitForm);
+  
+  // También permitir envío con Enter en los campos
+  dom.form.querySelectorAll('input, select').forEach(field => {
+    field.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitForm();
+      }
+    });
+  });
+
+  // Inicializar
+  calculate();
+});
+</script>
+
+{% schema %}
+{
+  "name": "Migration Cost Calculator",
+  "settings": [
+    {"type": "color_scheme", "id": "color_scheme", "label": "Color scheme", "default": "scheme-1"},
+    {"type": "color", "id": "price_color", "label": "Price color", "default": "#2563eb"},
+    {"type": "color", "id": "thumb_color", "label": "Slider thumb color", "default": "#2563eb"},
+    {"type": "color", "id": "slider_bg", "label": "Slider background", "default": "#e5e7eb"},
+    {"type": "color", "id": "slider_fill", "label": "Slider fill color", "default": "#2563eb"},
+    {"type": "color", "id": "button_bg", "label": "Button background", "default": "#111827"},
+    {"type": "color", "id": "button_text_color", "label": "Button text color", "default": "#ffffff"},
+    {"type": "header", "content": "Content"},
+    {"type": "text", "id": "heading", "label": "Heading", "default": "Shopify Migration Calculator"},
+    {"type": "text", "id": "subheading", "label": "Subheading", "default": "Calculate your migration cost in seconds"},
+    {"type": "text", "id": "customers_label", "label": "Customers Label", "default": "Customers"},
+    {"type": "text", "id": "orders_label", "label": "Orders Label", "default": "Orders"},
+    {"type": "text", "id": "products_label", "label": "Products Label", "default": "Products"},
+    {"type": "header", "content": "Slider Configuration - Customers"},
+    {"type": "number", "id": "customers_min", "label": "Customers Min", "default": 0},
+    {"type": "number", "id": "customers_max", "label": "Customers Max", "default": 30000},
+    {"type": "number", "id": "customers_default", "label": "Customers Default", "default": 0},
+    {"type": "header", "content": "Slider Configuration - Orders"},
+    {"type": "number", "id": "orders_min", "label": "Orders Min", "default": 0},
+    {"type": "number", "id": "orders_max", "label": "Orders Max", "default": 30000},
+    {"type": "number", "id": "orders_default", "label": "Orders Default", "default": 0},
+    {"type": "header", "content": "Slider Configuration - Products"},
+    {"type": "number", "id": "products_min", "label": "Products Min", "default": 0},
+    {"type": "number", "id": "products_max", "label": "Products Max", "default": 30000},
+    {"type": "number", "id": "products_default", "label": "Products Default", "default": 0},
+    {"type": "header", "content": "Price Display"},
+    {"type": "text", "id": "price_box_title", "label": "Price Box Title", "default": "Estimated Investment"},
+    {"type": "text", "id": "custom_project_text", "label": "Custom Project Text", "default": "Custom project - We'll contact you with a quote"},
+    {"type": "header", "content": "Form"},
+    {"type": "text", "id": "email_placeholder", "label": "Email Placeholder", "default": "Email address"},
+    {"type": "text", "id": "phone_placeholder", "label": "Phone Placeholder", "default": "Phone number"},
+    {"type": "text", "id": "website_placeholder", "label": "Website Placeholder", "default": "Current website URL"},
+    {"type": "text", "id": "cms_placeholder", "label": "CMS Placeholder", "default": "Select your current CMS"},
+    {"type": "text", "id": "button_text", "label": "Button Text", "default": "Calculate & Get Quote"},
+    {"type": "text", "id": "success_price_text", "label": "Success Message (Price)", "default": "Success! Your estimated migration cost is price. We'll contact you shortly."},
+    {"type": "text", "id": "success_custom_text", "label": "Success Message (Custom)", "default": "Thanks! We'll contact you by email with a tailored quote within 24 hours."}
+  ],
+  "blocks": [
+    {
+      "type": "price_tier",
+      "name": "Price Tier",
+      "settings": [
+        {"type": "number", "id": "limit", "label": "Max units", "default": 100},
+        {"type": "number", "id": "price", "label": "Base price (EUR)", "default": 499}
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Migration Cost Calculator",
+      "blocks": [
+        {"type": "price_tier", "settings": {"limit": 100, "price": 499}},
+        {"type": "price_tier", "settings": {"limit": 500, "price": 799}},
+        {"type": "price_tier", "settings": {"limit": 1000, "price": 999}},
+        {"type": "price_tier", "settings": {"limit": 2000, "price": 1250}},
+        {"type": "price_tier", "settings": {"limit": 5000, "price": 1999}},
+        {"type": "price_tier", "settings": {"limit": 10000, "price": 2499}},
+        {"type": "price_tier", "settings": {"limit": 20000, "price": 3999}}
+      ]
+    }
+  ]
+}
+{% endschema %}
